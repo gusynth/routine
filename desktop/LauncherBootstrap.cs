@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -6,7 +6,7 @@ using System.Windows.Forms;
 [assembly: AssemblyTitle("Routine")]
 [assembly: AssemblyProduct("Routine")]
 [assembly: AssemblyDescription("Routine application entry point")]
-[assembly: AssemblyVersion("1.3.0.0")]
+[assembly: AssemblyVersion("1.0.0.0")]
 
 internal static class LauncherBootstrap {
     [STAThread]

@@ -1,6 +1,6 @@
 # Instalação e dados
 
-O build do instalador Windows x64 é `Routine-1.3.0-Setup.exe`. Ele inclui a interface HTML/CSS aprovada em WebView2, o mecanismo de instalação e o desinstalador próprio. Nenhuma release foi enviada ao GitHub automaticamente.
+O build do instalador Windows x64 é `Routine-1.0.0-Setup.exe`. Ele inclui a interface HTML/CSS aprovada em WebView2, o mecanismo de instalação e o desinstalador próprio. Os pacotes oficiais ficam na página de [Releases](https://github.com/gusynth/routine/releases).
 
 ## Situação da validação
 
@@ -18,6 +18,12 @@ O build do instalador Windows x64 é `Routine-1.3.0-Setup.exe`. Ele inclui a int
 4. Para usar no celular, abrir a seção integrada de QR Code. Não é necessário um launcher separado.
 
 O instalador inclui Node e .NET autocontido e verifica WebView2 antes de abrir a interface web. Se o componente estiver ausente, uma etapa nativa explica o download e pede confirmação; somente então baixa o instalador da Microsoft, verifica sua assinatura e o executa. Essa etapa precisa de internet. O payload de compilação é um arquivo interno do Setup, não uma edição portable para distribuição.
+
+## Atualizar ou reparar
+
+Execute o instalador da versão desejada. Ele reconhece uma instalação válida existente, mostra a versão instalada e a versão do pacote e mantém a pasta original. Um pacote mais novo oferece **Atualizar Routine**; a mesma versão oferece **Reparar Routine**. Os registros ficam separados e são mantidos.
+
+Um pacote com numeração inferior pede confirmação adicional antes de substituir o programa. Isso também pode aparecer ao passar dos builds privados 1.3.0 para a primeira edição pública 1.0.0. Exporte um backup antes dessa troca. Feche o Routine e sincronize alterações pendentes no celular antes de atualizar.
 
 ## Seus registros
 

@@ -3813,3 +3813,101 @@ details[data-motion-expanded="false"] > summary::after {
     font-size: 14px;
   }
 }
+
+/* Reports: short overview, lazy day details and bounded navigation. */
+.report-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.report-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 24px 0;
+}
+.report-stats > div {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #ffffff03;
+}
+.report-stats strong {
+  font-size: 26px;
+  line-height: 1.2;
+}
+.report-stats span {
+  color: #9d9daa;
+  font-size: 12px;
+}
+.report-disclosure {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin: 12px 0;
+  background: #ffffff02;
+}
+.report-disclosure > summary {
+  padding: 17px 18px;
+  cursor: pointer;
+  font-weight: 500;
+  line-height: 1.6;
+}
+.report-disclosure > summary:focus-visible {
+  outline: 2px solid #a9b5ff;
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+.report-detail-content {
+  padding: 0 18px 18px;
+}
+.report-detail-content > h3:first-child {
+  padding-top: 16px;
+  margin-top: 0;
+}
+.report-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 14px;
+}
+.report-pager span {
+  color: #9d9daa;
+  font-size: 12px;
+}
+.report-days-title {
+  scroll-margin-top: 24px;
+}
+@media (max-width: 640px) {
+  .report-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .report-stats > div {
+    padding: 14px;
+  }
+  .report-actions {
+    width: 100%;
+  }
+  .report-actions > .btn {
+    flex: 1 1 150px;
+  }
+  .report-pager {
+    justify-content: center;
+  }
+  .report-pager span {
+    order: -1;
+    width: 100%;
+    text-align: center;
+  }
+  .report-disclosure > summary {
+    padding: 15px 14px;
+    font-size: 12px;
+  }
+  .report-detail-content {
+    padding: 0 14px 16px;
+  }
+}

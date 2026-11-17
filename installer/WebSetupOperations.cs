@@ -19,7 +19,8 @@ public sealed partial class WebSetupWindow {
     readonly DispatcherTimer carousel=new(){Interval=TimeSpan.FromSeconds(3.4)};
     int benefitIndex;
     void Send(object message){if(!closing&&web.CoreWebView2!=null)web.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message));}
-    void State(string next,bool initial=false,string? title=null,string? description=null,string? code=null){view=next;Send(new{type="state",view,initial,removing,folder,deleteData,title,description,code});}
+    string ReleaseVersion=>typeof(WebSetupWindow).Assembly.GetName().Version!.ToString(3);
+    void State(string next,bool initial=false,string? title=null,string? description=null,string? code=null){view=next;Send(new{type="state",view,initial,removing,folder,deleteData,title,description,code,version=ReleaseVersion,installedVersion,installAction=InstallEngine.InstallAction(installedVersion,ReleaseVersion)});}
     static bool RuntimePresent(){try{return !string.IsNullOrEmpty(CoreWebView2Environment.GetAvailableBrowserVersionString());}catch(WebView2RuntimeNotFoundException){return false;}}
     async Task Prepare() {
         carousel.Tick+=(_,_)=>{
@@ -62,7 +63,7 @@ public sealed partial class WebSetupWindow {
         try {
             switch(action) {
                 case "primary":
-                    if(view=="welcome"&&!removing&&data.TryGetProperty("folder",out var target)&&target.ValueKind==JsonValueKind.String)folder=target.GetString()!;
+                    if(view=="welcome"&&!removing&&installedVersion==null&&data.TryGetProperty("folder",out var target)&&target.ValueKind==JsonValueKind.String)folder=target.GetString()!;
                     if(view=="welcome"&&removing)deleteData=data.TryGetProperty("deleteData",out var remove)&&remove.ValueKind==JsonValueKind.True;
                     bool desktop=!data.TryGetProperty("desktop",out var shortcut)||shortcut.ValueKind==JsonValueKind.True;
                     await Primary(desktop);break;
@@ -72,7 +73,7 @@ public sealed partial class WebSetupWindow {
                         else await FinishClose();
                     }else State("welcome");break;
                 case "browse":
-                    if(view!="welcome"||removing)return;
+                    if(view!="welcome"||removing||installedVersion!=null)return;
                     var picker=new OpenFolderDialog{Title="Escolha onde instalar o Routine"};
                     if(picker.ShowDialog(this)==true){folder=string.Equals(Path.GetFileName(picker.FolderName),"Routine",StringComparison.OrdinalIgnoreCase)?picker.FolderName:Path.Combine(picker.FolderName,"Routine");Send(new{type="folder",path=folder});}break;
                 case "backup":if(removing&&view=="welcome")await ExportBackup();break;
@@ -85,6 +86,7 @@ public sealed partial class WebSetupWindow {
             if(!removing)Process.Start(new ProcessStartInfo(Path.Combine(folder,"Routine.exe")){WorkingDirectory=folder,UseShellExecute=true});
             await FinishClose();return;
         }
+        if(!removing&&InstallEngine.InstallAction(installedVersion,ReleaseVersion)=="downgrade"&&!await Confirm("Instalar uma versão anterior?",$"A versão instalada é {installedVersion} e este pacote é {ReleaseVersion}. Faça um backup antes de continuar: versões anteriores podem não compreender dados de uma versão mais recente. Deseja substituir os arquivos do programa?","Instalar esta versão")){State("welcome");return;}
         if(removing&&deleteData&&!programRemoved&&!await Confirm("Apagar também seus registros?","Isso remove treinos, alimentação, progresso, backups e recuperação local da pasta de dados do Routine. Essa ação não pode ser desfeita.","Apagar e desinstalar",true)){State("welcome");return;}
         if(view=="error"&&(WindowsIntegration.Running(installationRoot)||await Task.Run(WindowsIntegration.DataServerRunning))) {
             if(!await Confirm("Encerrar o Routine?","O aplicativo e o servidor serão encerrados. Celulares conectados perderão acesso. Sincronize registros pendentes antes de continuar.","Fechar e continuar")){State("welcome");return;}

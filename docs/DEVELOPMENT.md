@@ -36,7 +36,7 @@ Os testes devem usar dados descartáveis. Não execute testes de remoção/insta
 
 ## Setup em desenvolvimento
 
-`npm run installer:build` compila o desinstalador, prepara o payload interno e gera `releases/Routine-1.3.0-Setup.exe`, com SHA-256 e metadados. Requer Windows, Node, SDK .NET e acesso aos pacotes oficiais. O runtime autocontido é fixado em 10.0.15.
+`npm run installer:build` compila o desinstalador, prepara o payload interno e gera `releases/Routine-1.0.0-Setup.exe`, com SHA-256 e metadados. Requer Windows, Node, SDK .NET e acesso aos pacotes oficiais. O runtime autocontido é fixado em 10.0.15.
 
 `npm run test:installer` testa o mecanismo usando arquivos descartáveis. O projeto `installer/tests/smoke` é um harness de integração WPF limitado ao usuário WDAGUtilityAccount com marcador explícito no Windows Sandbox. A execução no convidado foi bloqueada pela política de Controle de Aplicativos; o build não deve ser anunciado como integralmente validado em Windows limpo.
 

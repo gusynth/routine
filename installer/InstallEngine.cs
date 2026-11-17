@@ -15,6 +15,12 @@ public sealed class ProgramManifest {
 
 // No registry, UI or process mutations here. Tests exercise real archive and file operations in disposable fixtures.
 public static class InstallEngine {
+    public static string InstallAction(string? installedVersion,string targetVersion) {
+        if(!Version.TryParse(targetVersion,out var target))throw new SetupFailure("R-IN-002","Versão do pacote inválida.");
+        if(installedVersion==null)return "install";
+        if(!Version.TryParse(installedVersion,out var installed))throw new SetupFailure("R-IN-004","A versão instalada não foi reconhecida.");
+        return target>installed?"update":target==installed?"repair":"downgrade";
+    }
     public const string ManifestName = "PROGRAM-MANIFEST.json";
     static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true };
     public static string Full(string path) => Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar);

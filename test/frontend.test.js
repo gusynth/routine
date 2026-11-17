@@ -1824,7 +1824,10 @@ test("phone access shows local QR/link, handles no network and server failure wi
     return original(url, opts);
   };
   await c.w.refreshMobileAccess();
-  assert.match(c.$("#phoneConnection").textContent, /Reabra o Routine pelo atalho/);
+  assert.match(
+    c.$("#phoneConnection").textContent,
+    /Reabra o Routine pelo atalho/,
+  );
   assert.equal(c.$("#phoneRefresh").disabled, false);
   assert.equal(JSON.stringify(c.db.state), records);
 });
@@ -1941,4 +1944,67 @@ test("wordmark RGB is finite, mouse-only, accessible and disabled in training or
   c.w.preference("reduce-motion", true);
   pointer("mouse");
   assert.equal(mark.classList.contains("wordmark-burst"), false);
+});
+
+test("monthly overview pages days lazily while copying the entire original report", async (t) => {
+  const c = await client(database());
+  t.after(() => c.close());
+  const data = c.w.qa.state;
+  for (let i = 1; i <= 20; i++)
+    data.diary[`2026-01-${String(i).padStart(2, "0")}`] = {
+      status: i === 20 ? "draft" : "done",
+      meals: { Almoço: `Refeição do dia ${i}` },
+      checks: {},
+      goalNames: {},
+    };
+  data.profile.weights = [
+    { date: "2026-01-25", weight: 72, notes: "Registro sem diário" },
+  ];
+  c.w.nav("report");
+  c.w.changeReportDate("2026-01-15");
+  c.w.changeReportRange("month");
+  await settle();
+  assert.equal(c.w.document.querySelectorAll("#reportDays details").length, 7);
+  assert.equal(c.$("#reportDays details").dataset.date, "2026-01-25");
+  assert.equal(c.$("#reportDays details").open, false);
+  assert.equal(c.$("#reportDays .report-detail-content").childElementCount, 0);
+  const markdown = c.$("#reportText").value;
+  assert.match(markdown, /Refeição do dia 1\n/);
+  assert.match(markdown, /Refeição do dia 20/);
+  c.$("#reportDays summary").click();
+  await settle();
+  assert.match(c.$("#reportDays .report-detail-content").textContent, /72 kg/);
+  c.w.document.querySelectorAll(".report-pager button")[1].click();
+  await settle();
+  assert.equal(c.w.document.querySelectorAll("#reportDays details").length, 7);
+  assert.equal(c.$("#reportText").value, markdown);
+  await c.w.copyReport();
+  assert.equal(c.w.copied, markdown);
+  c.w.toggleReportSource();
+  assert.equal(c.$("#reportText").hidden, false);
+  c.w.changeReportRange("day");
+  await settle();
+  assert.equal(c.w.document.querySelectorAll("#reportDays details").length, 1);
+  assert.equal(c.$(".report-pager").hidden, true);
+});
+
+test("report day details escape meal markup and empty periods stay concise", async (t) => {
+  const c = await client(database());
+  t.after(() => c.close());
+  c.w.qa.state.diary["2026-01-01"] = {
+    status: "draft",
+    meals: { Almoço: "<img src=x onerror=alert(1)>" },
+  };
+  c.w.nav("report");
+  c.w.changeReportDate("2026-01-01");
+  c.w.changeReportRange("day");
+  await settle();
+  c.$("#reportDays summary").click();
+  await settle();
+  assert.equal(c.$("#reportDays img"), null);
+  assert.match(c.$("#reportDays").textContent, /<img src=x/);
+  c.w.changeReportDate("2025-01-01");
+  await settle();
+  assert.match(c.$("#reportDays").textContent, /Nenhum registro/);
+  assert.equal(c.$("#reportDays details"), null);
 });

@@ -1,4 +1,4 @@
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -20,6 +20,8 @@ MemoryStream Payload(string version="1.0.0",bool corrupt=false,bool missing=fals
 void Install(MemoryStream payload,string target,Action<string>? integrate=null,Action? rollback=null,CancellationToken token=default){using(payload)InstallEngine.Install(payload,target,Path.Combine(root,"user-data"),integrate??(_=>{}),rollback??(()=>{}),null,token);}
 void MustFail(Action action,string label){bool failed=false;try{action();}catch{failed=true;}Check(failed,label);passed++;}
 try {
+    foreach(var (installed,target,action) in new (string?,string,string)[]{(null,"1.0.0","install"),("1.0.0","1.0.1","update"),("1.0.0","1.0.0","repair"),("1.3.0","1.0.0","downgrade")}) {Check(InstallEngine.InstallAction(installed,target)==action,"Wrong installation intent");passed++;}
+    MustFail(()=>InstallEngine.InstallAction("invalid","1.0.0"),"Invalid installed version accepted");
     var data=Path.Combine(root,"user-data");Directory.CreateDirectory(data);File.WriteAllText(Path.Combine(data,"database.json"),"personal sentinel");
     var app=Path.Combine(root,"installed-app");Install(Payload(),app);Check(InstallEngine.ReadManifest(app).Version=="1.0.0","Install failed");passed++;
     Install(Payload("1.1.0"),app);Check(File.ReadAllText(Path.Combine(app,"Routine.exe"))=="fixture only 1.1.0","Upgrade failed");Check(File.ReadAllText(Path.Combine(data,"database.json"))=="personal sentinel","User data changed");passed++;

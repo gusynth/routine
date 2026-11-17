@@ -996,6 +996,7 @@ function changeReportRange(value) {
 }
 function changeReportDate(value) {
   reportDate = value || date();
+  if ($("#reportDate")) $("#reportDate").value = reportDate;
   generateReport();
 }
 function report() {
@@ -1003,9 +1004,9 @@ function report() {
     heading(
       "CONTEXTO PARA O PRÓXIMO PASSO",
       "Seu relatório.",
-      "Leve seus registros para conversar com o Gemini.",
+      "Veja o essencial e abra os detalhes quando precisar.",
     ) +
-    `<div class="card"><div class="formgrid"><div><label>Período</label><select id="range" onchange="changeReportRange(this.value)"><option value="day">Dia</option><option value="week" ${reportRange === "week" ? "selected" : ""}>Últimos 7 dias</option><option value="month" ${reportRange === "month" ? "selected" : ""}>Mês completo</option></select></div><div><label>Data de referência (ou mês desejado)</label><input id="reportDate" type="date" value="${reportDate}" onchange="changeReportDate(this.value)"></div></div><div class="report-toolbar"><span class="eyebrow">SEU PROGRESSO, EM PERSPECTIVA</span><button type="button" class="btn small" id="reportSourceButton" onclick="toggleReportSource()">Ver Markdown</button></div><article id="reportPreview" class="report-document" aria-label="Relatório formatado"></article><textarea class="report" id="reportText" aria-label="Relatório em Markdown" readonly hidden></textarea><button class="btn primary action-after" onclick="copyReport()">Copiar relatório para IA ↗</button><p class="footnote">O relatório fica aqui até você copiá-lo. Nenhum dado é enviado ao Gemini automaticamente.</p></div>`;
+    `<div class="card"><div class="formgrid"><div><label>Período</label><select id="range" onchange="changeReportRange(this.value)"><option value="day">Dia</option><option value="week" ${reportRange === "week" ? "selected" : ""}>Últimos 7 dias</option><option value="month" ${reportRange === "month" ? "selected" : ""}>Mês completo</option></select></div><div><label>Data de referência (ou mês desejado)</label><input id="reportDate" type="date" value="${reportDate}" onchange="changeReportDate(this.value)"></div></div><div class="report-toolbar"><span class="eyebrow">SEU PROGRESSO, EM PERSPECTIVA</span><div class="report-actions"><button type="button" class="btn primary small" onclick="copyReport()">Copiar relatório completo ↗</button><button type="button" class="btn small" id="reportSourceButton" onclick="toggleReportSource()">Ver Markdown</button></div></div><article id="reportPreview" class="report-document" aria-label="Relatório formatado"></article><textarea class="report" id="reportText" aria-label="Relatório em Markdown" readonly hidden></textarea><p class="footnote">A cópia inclui todos os detalhes do período, mesmo os recolhidos. Nenhum dado é enviado automaticamente para uma IA.</p></div>`;
   $("#app").insertAdjacentHTML("beforeend", aiExplanation());
   $("#range").value = reportRange;
   generateReport();
@@ -1053,12 +1054,12 @@ function generateReport() {
       .join("\n") || "Nenhum registro.";
   text += reportComparison(start, end);
   $("#reportText").value = text;
-  renderMarkdownPreview(text);
+  renderReportOverview(text, { start, end, history: hs, entries });
 }
 async function copyReport() {
   try {
     await navigator.clipboard.writeText($("#reportText").value);
-    toast("Copiado. Pronto para colar no Gemini.");
+    toast("Relatório completo copiado. Pronto para guardar ou compartilhar.");
   } catch {
     $("#reportText").hidden = false;
     $("#reportPreview").hidden = true;

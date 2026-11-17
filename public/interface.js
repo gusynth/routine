@@ -541,8 +541,8 @@ document.addEventListener(
   { capture: true, passive: true },
 );
 
-function renderMarkdownPreview(markdown) {
-  const preview = document.querySelector("#reportPreview");
+function renderMarkdownPreview(markdown, target = null) {
+  const preview = target || document.querySelector("#reportPreview");
   if (!preview) return;
   const fragment = document.createDocumentFragment();
   let list = null;
@@ -594,7 +594,192 @@ function renderMarkdownPreview(markdown) {
     }
     fragment.append(el);
   }
-  RoutineMotion.swap(preview, () => preview.replaceChildren(fragment));
+  if (target) preview.replaceChildren(fragment);
+  else RoutineMotion.swap(preview, () => preview.replaceChildren(fragment));
+}
+// Long periods stay browsable: summaries first, seven recorded days at a time,
+// with detail nodes created only when their disclosure is opened.
+function renderReportOverview(markdown, { start, end, history, entries }) {
+  const preview = document.querySelector("#reportPreview");
+  if (!preview) return;
+  const root = document.createElement("div");
+  const weights = state.profile.weights.filter(
+    (w) => w.date >= start && w.date <= end,
+  );
+  const days = new Map();
+  const day = (key) => {
+    if (!days.has(key))
+      days.set(key, { sessions: [], diary: null, weights: [] });
+    return days.get(key);
+  };
+  for (const session of history) day(session.date).sessions.push(session);
+  for (const [key, entry] of entries) day(key).diary = entry;
+  for (const weight of weights) day(weight.date).weights.push(weight);
+  const heading = document.createElement("h2");
+  heading.textContent =
+    reportRange === "month"
+      ? "Seu mês em perspectiva"
+      : reportRange === "week"
+        ? "Sua semana em perspectiva"
+        : "Seu dia em perspectiva";
+  root.append(heading);
+  const period = document.createElement("p");
+  const localDate = (value) => value.split("-").reverse().join("/");
+  period.textContent = `${localDate(start)} a ${localDate(end)}`;
+  root.append(period);
+  const stats = document.createElement("div");
+  stats.className = "report-stats";
+  for (const [number, label] of [
+    [history.length, "Treinos registrados"],
+    [history.reduce((n, h) => n + h.results.length, 0), "Séries registradas"],
+    [entries.length, "Dias de diário"],
+    [weights.length, "Registros de peso"],
+  ]) {
+    const card = document.createElement("div"),
+      value = document.createElement("strong"),
+      caption = document.createElement("span");
+    value.textContent = number;
+    caption.textContent = label;
+    card.append(value, caption);
+    stats.append(card);
+  }
+  root.append(stats);
+  function disclosure(parent, label, content, className = "") {
+    const details = document.createElement("details");
+    details.className = "report-disclosure " + className;
+    const summary = document.createElement("summary");
+    summary.textContent = label;
+    const body = document.createElement("div");
+    body.className = "report-detail-content";
+    let loaded = false;
+    const load = () => {
+      if (loaded) return;
+      loaded = true;
+      renderMarkdownPreview(content(), body);
+    };
+    // Load before the shared disclosure animation measures its final height.
+    summary.addEventListener("click", load);
+    details.addEventListener("toggle", () => {
+      if (details.open) load();
+    });
+    details.append(summary, body);
+    parent.append(details);
+    return details;
+  }
+  disclosure(root, "Comparar com o período anterior", () =>
+    reportComparison(start, end),
+  );
+  disclosure(
+    root,
+    "Perfil e contexto atual",
+    () =>
+      `Altura atual: ${state.profile.height.toFixed(2)} m\nPeso atual: ${state.profile.weightKnown === false ? "Não informado" : state.profile.weight + " kg"}\nPercepções gerais atuais: ${state.profile.notes || "Não registradas"}`,
+  );
+  const title = document.createElement("h3");
+  title.className = "report-days-title";
+  title.textContent = "Seus dias, em detalhes";
+  root.append(title);
+  const hint = document.createElement("p");
+  hint.className = "footnote";
+  hint.textContent =
+    "Abra um dia para conferir treinos, refeições e peso. Dias sem registros não são listados.";
+  root.append(hint);
+  const list = document.createElement("div");
+  list.id = "reportDays";
+  root.append(list);
+  const pager = document.createElement("nav");
+  pager.className = "report-pager";
+  pager.setAttribute("aria-label", "Páginas de dias do relatório");
+  const previous = document.createElement("button"),
+    next = document.createElement("button"),
+    status = document.createElement("span");
+  previous.type = next.type = "button";
+  previous.className = next.className = "btn small";
+  previous.textContent = "Mais recentes";
+  next.textContent = "Mais antigos";
+  status.setAttribute("aria-live", "polite");
+  pager.append(previous, status, next);
+  root.append(pager);
+  const keys = [...days.keys()].sort().reverse();
+  let offset = 0;
+  const content = (key, record) => {
+    let text = "";
+    for (const h of record.sessions) {
+      text += `## ${h.workout.name} (${h.cycleName})\n`;
+      for (const e of h.results)
+        text += `- ${e.block} / ${e.name}: série ${e.series}, realizado ${e.actual} ${e.type === "time" ? "s" : "reps"} vs meta ${e.target}; descanso planejado ${e.rest}s${e.estimated ? " [ESTIMATIVA — revisar repetições]" : ""}\n`;
+      text += `Observações: ${h.notes || "Sem observações"}\n`;
+    }
+    if (record.diary) {
+      const entry = record.diary;
+      text += `\n## Alimentação${entry.status === "draft" ? " — Rascunho" : ""}\n`;
+      for (const meal of meals)
+        text += `- ${meal}: ${entry.meals?.[meal] || "Não registrado"}\n`;
+      for (const [id, name] of Object.entries(entry.goalNames || {}))
+        text += `- [${entry.checks?.[id] ? "x" : " "}] ${name}\n`;
+    }
+    if (record.weights.length)
+      text +=
+        "\n## Peso\n" +
+        record.weights
+          .map((w) => `- ${w.weight} kg; ${w.notes || "Sem observações"}`)
+          .join("\n");
+    return text;
+  };
+  const draw = (focus = false) => {
+    list.replaceChildren();
+    if (!keys.length) {
+      const empty = document.createElement("p");
+      empty.textContent =
+        "Nenhum registro neste período. Escolha outra data para consultar seu histórico.";
+      list.append(empty);
+    }
+    for (const key of keys.slice(offset, offset + 7)) {
+      const record = days.get(key);
+      const labels = [
+        record.sessions.length
+          ? `${record.sessions.length} ${record.sessions.length === 1 ? "treino" : "treinos"}`
+          : "",
+        record.diary
+          ? record.diary.status === "draft"
+            ? "diário em rascunho"
+            : "diário alimentar"
+          : "",
+        record.weights.length ? "peso" : "",
+      ].filter(Boolean);
+      const details = disclosure(
+        list,
+        `${localDate(key)} · ${labels.join(" · ")}`,
+        () => content(key, record),
+        "report-day",
+      );
+      details.dataset.date = key;
+    }
+    previous.disabled = offset === 0;
+    next.disabled = offset + 7 >= keys.length;
+    status.textContent = keys.length
+      ? `${offset + 1}–${Math.min(offset + 7, keys.length)} de ${keys.length} dias`
+      : "Sem dias registrados";
+    pager.hidden = keys.length <= 7;
+    if (focus) {
+      const summary = list.querySelector("summary");
+      if (summary) {
+        summary.tabIndex = -1;
+        summary.focus({ preventScroll: true });
+        summary.scrollIntoView?.({ block: "nearest", behavior: "auto" });
+      }
+    }
+  };
+  previous.addEventListener("click", () => {
+    offset = Math.max(0, offset - 7);
+    RoutineMotion.swap(list, () => draw(true));
+  });
+  next.addEventListener("click", () => {
+    offset = Math.min(Math.max(0, keys.length - 1), offset + 7);
+    RoutineMotion.swap(list, () => draw(true));
+  });
+  draw();
+  RoutineMotion.swap(preview, () => preview.replaceChildren(root));
 }
 function toggleReportSource() {
   const source = document.querySelector("#reportText"),

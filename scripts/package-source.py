@@ -14,6 +14,7 @@ FILES = (
     'scripts/build.js', 'scripts/build-scene.js', 'scripts/build-static.js',
     'scripts/package-source.py', 'scripts/prepare-development.ps1', 'scripts/backup-local.js',
     'scripts/preview-server.js', 'scripts/measure-runtime.js', 'scripts/build-install-payload.ps1', 'scripts/build-installer.ps1',
+    'scripts/build-installer-web.cjs', 'scripts/build-installer-preview.ps1',
 )
 DIRECTORIES = ('lib', 'public', 'assets', 'test', '.github', 'docs', 'desktop/controller', 'installer')
 FORBIDDEN = {'database.json', 'backups', '.runtime', 'node_modules', '.git', 'logos',

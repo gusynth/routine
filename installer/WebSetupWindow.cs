@@ -13,6 +13,7 @@ public sealed partial class WebSetupWindow:Window {
     const string Origin="https://routine-setup.invalid/";
     readonly bool removing;
     readonly string installationRoot;
+    readonly string? installedVersion;
     readonly string scratch=Path.Combine(Path.GetTempPath(),"Routine-setup-web",Guid.NewGuid().ToString("N"));
     readonly WebView2 web=new(){DefaultBackgroundColor=System.Drawing.Color.FromArgb(255,13,14,17)};
     bool closing,allowClose;
@@ -20,6 +21,7 @@ public sealed partial class WebSetupWindow:Window {
     [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd,int attribute,ref int value,int size);
     public WebSetupWindow(bool uninstall=false,string? root=null) {
         removing=uninstall;installationRoot=root??WindowsIntegration.InstalledDirectory??WindowsIntegration.DefaultDirectory;folder=installationRoot;
+        if(!removing&&File.Exists(Path.Combine(installationRoot,InstallEngine.ManifestName)))installedVersion=InstallEngine.ReadManifest(installationRoot).Version;
         Title=removing?"Routine · Desinstalar":"Routine · Instalação";
         Width=Math.Min(772,SystemParameters.WorkArea.Width-24);Height=Math.Min(650,SystemParameters.WorkArea.Height-24);
         MinWidth=360;MinHeight=420;WindowStartupLocation=WindowStartupLocation.CenterScreen;
