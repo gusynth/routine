@@ -1,0 +1,21 @@
+// Offline export for recovery and migration. Does not start the app or modify the source database.
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const { validateBackup, summary } = require('../lib/backups');
+const { resolvePaths } = require('../lib/paths');
+const root = path.resolve(__dirname, '..');
+const output = process.argv[2];
+if (!output) throw Error('Informe o caminho completo do arquivo JSON de destino.');
+const source = resolvePaths(root).database;
+const raw = fs.readFileSync(source);
+const originalHash = crypto.createHash('sha256').update(raw).digest('hex');
+const payload = validateBackup(JSON.parse(raw.toString('utf8').replace(/^\uFEFF/, '')));
+const backup = { format: 'routine-backup-v1', createdAt: new Date().toISOString(), ...payload };
+const destination = path.resolve(output);
+if (destination === source || destination === path.join(root, 'package.json')) throw Error('Destino inválido.');
+fs.writeFileSync(destination, JSON.stringify(backup, null, 2), {encoding:'utf8',flag:'wx'});
+const saved = validateBackup(JSON.parse(fs.readFileSync(destination, 'utf8')));
+if (JSON.stringify(saved) !== JSON.stringify(payload)) throw Error('A conferência do backup falhou.');
+if (crypto.createHash('sha256').update(fs.readFileSync(source)).digest('hex') !== originalHash) throw Error('O banco mudou durante a cópia. Gere outro backup para incluir as alterações.');
+console.log(JSON.stringify({file:destination,revision:saved.revision,records:summary(saved.state),sha256:crypto.createHash('sha256').update(fs.readFileSync(destination)).digest('hex'),verified:true}));

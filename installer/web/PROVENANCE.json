@@ -1,0 +1,20 @@
+{
+  "reference": "routine-installer-final-preview.html",
+  "referenceSha256": "26a044a1e91ff1a90bf5beaa00391dd28d513827c1f9167c6921b381d7fb75b3",
+  "htmlSha256": "ce1b22e98517c24f465ac8b3d3af4069ee4970e56c2d6b0218a2756a99114b0d",
+  "lucide": "0.468.0",
+  "mode": "Simulation only; no installation bridge",
+  "preserved": [
+    "original CSS",
+    "embedded variable Inter WOFF2",
+    "embedded hero PNG",
+    "symbol and wordmark SVG",
+    "original options motion",
+    "original persistent artwork transitions"
+  ],
+  "refinements": [
+    "Shield centered on the title line",
+    "Retention and delete control share icon/text columns",
+    "Consistent spacing for the deletion helper text"
+  ]
+}

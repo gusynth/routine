@@ -1,0 +1,39 @@
+{
+  "name": "routine",
+  "version": "1.3.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test",
+    "test:launcher": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File test/launcher-suite.ps1",
+    "desktop:build": "dotnet publish desktop/RoutineDesktop.csproj -c Release -o desktop/app --no-self-contained",
+    "desktop:prepare": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/prepare-development.ps1",
+    "build:scene": "node scripts/build-scene.js",
+    "build": "node scripts/build.js",
+    "installer:payload": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/build-install-payload.ps1",
+    "installer:build": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/build-installer.ps1",
+    "installer:preview": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/build-installer-preview.ps1",
+    "test:installer:ui": "node --test installer/tests/web-preview.test.cjs",
+    "test:installer": "dotnet run --project installer/tests/Engine.Tests.csproj -c Release -p:NuGetAudit=false"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "@pmndrs/vanilla": "1.25.0",
+    "esbuild": "0.25.0",
+    "jsdom": "^26.1.0",
+    "jsqr": "^1.4.0",
+    "maath": "0.10.8",
+    "pngjs": "^5.0.0",
+    "prettier": "^3.9.10",
+    "three": "0.170.0"
+  },
+  "license": "MIT",
+  "description": "Local-first calisthenics, training progress and food journal with desktop and mobile access."
+}
